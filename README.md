@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WatchTower Retention Portal
 
-## Getting Started
+Next.js 15 + Supabase (Postgres, Auth, RLS) portal for Manzanita Security workforce retention tracking.
 
-First, run the development server:
+## Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node 20+ (LTS recommended; Node 25 + npm 11 can hit resolver bugs — use Node 22 LTS if `npm install` fails)
+- npm 9+ (ships with Node)
+- Supabase project (you run `supabase link` and migrations locally)
+
+### npm install troubleshooting
+
+1. **Use only npm in this repo** — delete `pnpm-lock.yaml` if it exists (npm should not mix with pnpm lockfiles).
+2. **Clean install:**  
+   `rm -rf node_modules package-lock.json && npm cache clean --force && npm install`
+3. If you still see `Cannot read properties of null (reading 'matches')` or a **parent folder** has its own `package-lock.json`, run install from this directory only or temporarily rename the parent lockfile so npm does not pick the wrong workspace root.
+4. Optional: `npm install --legacy-peer-deps` if peer dependency resolution errors appear.
+
+## Environment variables
+
+Copy `.env.example` to `.env.local` and fill in values.
+
+| Variable                        | Description                                                                              |
+| ------------------------------- | ---------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL                                                                     |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon (public) key                                                               |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Service role key — **server only**, used for first-login profile bootstrap               |
+| `ALLOWLIST_JSON`                | Map of lowercase email → `{ "orgId": "<uuid>", "role": "owner" \| "admin" \| "viewer" }` |
+| `NEXT_PUBLIC_SITE_URL`          | Base URL for magic-link redirect (e.g. `https://your-app.up.railway.app`)                |
+
+Example `ALLOWLIST_JSON` (single line for `.env`):
+
+```json
+{
+  "abdulgani.muhammedsani@gmail.com": {
+    "orgId": "00000000-0000-0000-0000-000000000001",
+    "role": "owner"
+  },
+  "ceggers@manzanita.io": {
+    "orgId": "00000000-0000-0000-0000-000000000001",
+    "role": "owner"
+  }
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Database
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Apply migrations in [`supabase/migrations/`](supabase/migrations/) in order (init creates `sites_ops`; a later migration renames legacy `sites` → `sites_ops` if needed).
+2. Optionally run seed: [`supabase/seed.sql`](supabase/seed.sql) (Manzanita org row)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How to invite a teammate (Phase 1)
 
-## Learn More
+1. Add their email (lowercase key) to `ALLOWLIST_JSON` with the correct `orgId` and `role`.
+2. Redeploy or update the env var on Railway and restart the service.
+3. They request a magic link on `/login`.
 
-To learn more about Next.js, take a look at the following resources:
+Phase 2 will add in-app invites (`pending_invites`).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Importing historical `monthly_records` (CSV)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Expected columns: `year`, `month` (0–11), `starting_hc`, `new_hires`, `departures`.
 
-## Deploy on Vercel
+Use the Supabase SQL editor or `psql` after transforming CSV to `INSERT` statements, for example:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```sql
+insert into public.monthly_records (org_id, year, month, starting_hc, new_hires, departures)
+values ('00000000-0000-0000-0000-000000000001', 2024, 0, 48, 2, 3);
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`starting_hc` may be `NULL` for months with no starting HC entered yet.
+
+## Scripts
+
+- `npm run dev` — development server
+- `npm run build` / `npm start` — production
+- `npm run lint` — ESLint
+- `npm test` — Vitest (retention math)
+- `npm run format` — Prettier
+
+## RLS isolation check
+
+1. Create a second organization and a second test user profile in SQL (different `org_id`).
+2. Sign in as that user and confirm `/dashboard` shows no Manzanita rows (queries return only `current_org_id()` data).
+
+## Deploy (Railway)
+
+1. Create a Railway service from this repo; set build command `npm run build` and start command `npm start`.
+2. Add the same env vars as in `.env.example`.
+3. In Supabase Auth → URL configuration, add redirect URL: `{NEXT_PUBLIC_SITE_URL}/api/auth/callback`.
+
+Default Phase 1 deploy can stay on the Railway-generated URL; swap DNS later if needed.
+
+## Lighthouse
+
+Target ≥ 95 on `/dashboard` after real data and fonts are loaded; optimize images and keep dashboard RSC payload lean if scores lag.

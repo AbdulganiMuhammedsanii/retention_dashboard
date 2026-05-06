@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manzanita Security · Retention Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0A0B0D;
+  --panel: #131519;
+  --panel-elevated: #1A1D23;
+  --border: #23272F;
+  --border-strong: #353A45;
+  --text: #ECEEF2;
+  --text-muted: #8B919C;
+  --text-faint: #545A65;
+  --rust: #C2410C;
+  --rust-soft: #EA580C;
+  --rust-glow: rgba(234, 88, 12, 0.15);
+  --green: #10B981;
+  --green-soft: rgba(16, 185, 129, 0.12);
+  --red: #EF4444;
+  --red-soft: rgba(239, 68, 68, 0.12);
+  --amber: #F59E0B;
+  --display: 'Bricolage Grotesque', serif;
+  --body: 'Manrope', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(194, 65, 12, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.04) 0%, transparent 40%);
+}
+
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px 40px 80px;
+}
+
+/* HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 32px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-mark {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--rust) 0%, var(--rust-soft) 100%);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--bg);
+  box-shadow: 0 0 24px var(--rust-glow);
+}
+
+.brand-text .eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 2px;
+}
+
+.brand-text h1 {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.header-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.formula-pill {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+
+.formula-pill .accent { color: var(--rust-soft); }
+
+/* KPI ROW */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.kpi {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 22px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: var(--border-strong);
+}
+
+.kpi.primary::before { background: var(--rust-soft); }
+.kpi.positive::before { background: var(--green); }
+.kpi.warning::before { background: var(--amber); }
+
+.kpi-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+}
+
+.kpi-value {
+  font-family: var(--display);
+  font-size: 38px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--text);
+}
+
+.kpi-value .unit {
+  font-size: 18px;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.kpi-detail {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.delta.up { background: var(--green-soft); color: var(--green); }
+.delta.down { background: var(--red-soft); color: var(--red); }
+.delta.flat { background: rgba(139, 145, 156, 0.1); color: var(--text-muted); }
+
+/* GRID LAYOUT */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-title {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.panel-subtitle {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* CHART */
+#trend-chart {
+  width: 100%;
+  height: 280px;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 20px;
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 10px; height: 2px;
+  border-radius: 1px;
+}
+
+/* SITE BREAKDOWN */
+.site-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.site-list::-webkit-scrollbar { width: 4px; }
+.site-list::-webkit-scrollbar-track { background: transparent; }
+.site-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+.site-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.site-row:last-child { border-bottom: none; }
+
+.site-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  grid-column: 1 / -1;
+}
+
+.site-name {
+  font-family: var(--body);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.site-rate {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.site-bar {
+  grid-column: 1 / -1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.site-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.site-meta {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+.empty-state button {
+  margin-top: 12px;
+}
+
+/* DATA ENTRY */
+.entry-section {
+  margin-bottom: 32px;
+}
+
+.entry-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.tab {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tab:hover { color: var(--text); border-color: var(--border-strong); }
+.tab.active {
+  background: var(--rust-glow);
+  border-color: var(--rust-soft);
+  color: var(--rust-soft);
+}
+
+.entry-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.entry-table th {
+  text-align: left;
+  padding: 12px 14px;
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-elevated);
+}
+
+.entry-table th.num { text-align: right; }
+
+.entry-table td {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.entry-table tr:hover td { background: var(--panel-elevated); }
+
+.entry-table td.num { text-align: right; }
+.entry-table td.calc { color: var(--text-muted); }
+.entry-table td.rate-cell { font-weight: 600; }
+
+.entry-table input {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 3px;
+  width: 100%;
+  text-align: right;
+  transition: all 0.15s ease;
+}
+
+.entry-table input:hover {
+  border-color: var(--border);
+}
+
+.entry-table input:focus {
+  outline: none;
+  border-color: var(--rust-soft);
+  background: var(--bg);
+}
+
+.month-cell {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.month-cell.current {
+  color: var(--rust-soft);
+}
+
+.month-cell .year {
+  color: var(--text-faint);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  padding: 9px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.btn.primary {
+  background: var(--rust);
+  border-color: var(--rust);
+  color: white;
+}
+
+.btn.primary:hover {
+  background: var(--rust-soft);
+  border-color: var(--rust-soft);
+}
+
+.btn-group { display: flex; gap: 8px; }
+
+.save-status {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.save-status.saved { color: var(--green); }
+
+/* SITE EDITOR */
+.site-editor {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.site-editor input {
+  background: var(--panel-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 3px;
+  width: 100%;
+}
+
+.site-editor input[type="text"] { font-family: var(--body); text-align: left; }
+.site-editor input[type="number"] { text-align: right; }
+
+.site-editor input:focus {
+  outline: none;
+  border-color: var(--rust-soft);
+}
+
+.btn-icon {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  width: 32px; height: 32px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+
+.btn-icon:hover { color: var(--red); border-color: var(--red); }
+
+/* CONTEXT PANELS */
+.context-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.context-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.benchmark-bar {
+  position: relative;
+  height: 56px;
+  margin: 24px 0 16px;
+}
+
+.benchmark-track {
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 6px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg,
+    var(--green) 0%,
+    var(--green) 30%,
+    var(--amber) 50%,
+    var(--red) 70%,
+    var(--red) 100%);
+  border-radius: 3px;
+  opacity: 0.4;
+}
+
+.benchmark-marker {
+  position: absolute;
+  top: 50%;
+  width: 2px; height: 32px;
+  background: var(--text);
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.benchmark-marker::after {
+  content: attr(data-label);
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  white-space: nowrap;
+  background: var(--panel);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.benchmark-marker.you { background: var(--rust-soft); height: 40px; }
+.benchmark-marker.you::after { color: var(--rust-soft); }
+
+.benchmark-scale {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+
+.benchmark-context {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.benchmark-context strong { color: var(--text); font-weight: 500; }
+
+.source-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  margin-top: 10px;
+  display: block;
+}
+
+/* COST PANEL */
+.cost-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.cost-input-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  flex: 1;
+}
+
+.cost-input-wrap {
+  position: relative;
+}
+
+.cost-input-wrap::before {
+  content: '$';
+  position: absolute;
+  left: 10px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.cost-input {
+  background: var(--panel-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 8px 12px 8px 22px;
+  border-radius: 4px;
+  width: 110px;
+  text-align: right;
+}
+
+.cost-input:focus {
+  outline: none;
+  border-color: var(--rust-soft);
+}
+
+.cost-figure {
+  font-family: var(--display);
+  font-size: 42px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--rust-soft);
+  margin: 8px 0;
+}
+
+.cost-detail {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cost-detail:last-child { border-bottom: none; }
+
+.cost-detail .value { color: var(--text); }
+
+/* METHODOLOGY */
+.methodology {
+  margin-top: 32px;
+  padding: 20px 24px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.methodology summary {
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  list-style: none;
+  user-select: none;
+}
+
+.methodology summary::before {
+  content: '+ ';
+  color: var(--rust-soft);
+}
+
+.methodology[open] summary::before { content: '− '; }
+
+.methodology-body { margin-top: 16px; }
+
+.methodology-body p { margin-bottom: 10px; }
+
+.methodology-body code {
+  font-family: var(--mono);
+  background: var(--panel-elevated);
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: var(--rust-soft);
+  font-size: 11px;
+}
+
+@media (max-width: 1100px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .context-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .container { padding: 20px; }
+  .header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .header-meta { align-items: flex-start; }
+  .kpi-row { grid-template-columns: 1fr; }
+  .kpi-value { font-size: 32px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="brand">
+      <div class="logo-mark">M</div>
+      <div class="brand-text">
+        <div class="eyebrow">Manzanita Security · Operations</div>
+        <h1>Workforce Retention</h1>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div class="live-indicator">
+        <span class="live-dot"></span>
+        <span id="last-updated">UPDATED LIVE</span>
+      </div>
+      <div class="formula-pill">
+        Retention = (HC <span class="accent">−</span> Departures) / HC × 100
+      </div>
+    </div>
+  </header>
+
+  <!-- KPI STRIP -->
+  <section class="kpi-row">
+    <div class="kpi primary">
+      <div class="kpi-label">Current Month Retention</div>
+      <div class="kpi-value" id="kpi-current">— <span class="unit">%</span></div>
+      <div class="kpi-detail" id="kpi-current-detail">Awaiting data entry</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">12-Month Rolling Retention</div>
+      <div class="kpi-value" id="kpi-rolling">— <span class="unit">%</span></div>
+      <div class="kpi-detail" id="kpi-rolling-detail">Across reporting period</div>
+    </div>
+    <div class="kpi warning">
+      <div class="kpi-label">Annualized Turnover</div>
+      <div class="kpi-value" id="kpi-turnover">— <span class="unit">%</span></div>
+      <div class="kpi-detail" id="kpi-turnover-detail">Sum of 12mo departures ÷ avg HC</div>
+    </div>
+    <div class="kpi positive">
+      <div class="kpi-label">Active Headcount</div>
+      <div class="kpi-value" id="kpi-headcount">—</div>
+      <div class="kpi-detail" id="kpi-headcount-detail">Net change last 12mo</div>
+    </div>
+  </section>
+
+  <!-- MAIN GRID: TREND + SITES -->
+  <section class="main-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Monthly Retention Trend</div>
+        <div class="panel-subtitle">Trailing 12 Months</div>
+      </div>
+      <svg id="trend-chart" viewBox="0 0 800 280" preserveAspectRatio="none"></svg>
+      <div class="chart-legend">
+        <div class="legend-item"><span class="legend-swatch" style="background: var(--rust-soft)"></span>Retention %</div>
+        <div class="legend-item"><span class="legend-swatch" style="background: var(--text-faint)"></span>Industry Avg (88%)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background: var(--green); border-radius: 50%; width: 4px; height: 4px;"></span>Departures</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">By Site</div>
+        <div class="panel-subtitle">Current Month</div>
+      </div>
+      <div class="site-list" id="site-list"></div>
+    </div>
+  </section>
+
+  <!-- DATA ENTRY -->
+  <section class="entry-section">
+    <div class="entry-tabs">
+      <button class="tab active" data-tab="monthly">Monthly Roll-Up</button>
+      <button class="tab" data-tab="sites">Site Editor</button>
+    </div>
+
+    <!-- MONTHLY TABLE -->
+    <div class="panel" id="monthly-panel">
+      <div class="panel-header">
+        <div class="panel-title">Monthly Data Entry</div>
+        <div class="panel-subtitle">Click any cell to edit · Auto-saves</div>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="entry-table" id="monthly-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th class="num">Starting HC</th>
+              <th class="num">New Hires</th>
+              <th class="num">Departures</th>
+              <th class="num">Ending HC</th>
+              <th class="num">Retention %</th>
+              <th class="num">Net Change</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="action-bar">
+        <span class="save-status" id="save-status">Auto-save enabled</span>
+        <div class="btn-group">
+          <button class="btn" id="btn-add-month">+ Add Month</button>
+          <button class="btn" id="btn-reset">Reset Data</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SITE EDITOR PANEL -->
+    <div class="panel" id="sites-panel" style="display: none;">
+      <div class="panel-header">
+        <div class="panel-title">Site-Level Data</div>
+        <div class="panel-subtitle">Current snapshot</div>
+      </div>
+      <div class="site-editor" style="font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-faint); border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+        <div>Site Name</div>
+        <div style="text-align: right;">Starting HC</div>
+        <div style="text-align: right;">Departures</div>
+        <div style="text-align: right;">Retention</div>
+        <div></div>
+      </div>
+      <div id="site-editor-list"></div>
+      <div class="action-bar">
+        <span class="save-status">Auto-save enabled</span>
+        <button class="btn primary" id="btn-add-site">+ Add Site</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTEXT GRID -->
+  <section class="context-grid">
+
+    <!-- BENCHMARK -->
+    <div class="context-panel">
+      <div class="panel-header">
+        <div class="panel-title">Industry Benchmark</div>
+        <div class="panel-subtitle">Contract Security</div>
+      </div>
+      <div class="benchmark-bar">
+        <div class="benchmark-track"></div>
+        <div class="benchmark-marker" style="left: 88%;" data-label="INDUSTRY AVG"></div>
+        <div class="benchmark-marker you" id="you-marker" style="left: 50%;" data-label="MANZANITA"></div>
+      </div>
+      <div class="benchmark-scale">
+        <span>50%</span>
+        <span>70%</span>
+        <span>85%</span>
+        <span>95%</span>
+        <span>100%</span>
+      </div>
+      <div class="benchmark-context">
+        Contract security has one of the highest turnover rates of any U.S. industry. <strong>BLS data places annual turnover at 100–300%</strong>, equivalent to monthly retention of roughly 88–92%. ASIS International's 2023 Security Industry Workforce Survey aligns: median annual turnover sits near <strong>121%</strong>. Anything above 90% monthly retention is competitive; above 95% is elite.
+        <span class="source-tag">SOURCE · BLS JOLTS · ASIS WORKFORCE SURVEY 2023</span>
+      </div>
+    </div>
+
+    <!-- COST OF TURNOVER -->
+    <div class="context-panel">
+      <div class="panel-header">
+        <div class="panel-title">Cost of Turnover</div>
+        <div class="panel-subtitle">Trailing 12 Months</div>
+      </div>
+      <div class="cost-input-row">
+        <span class="cost-input-label">Replacement Cost / Guard</span>
+        <div class="cost-input-wrap">
+          <input type="number" class="cost-input" id="replacement-cost" value="3500" step="100">
+        </div>
+      </div>
+      <div class="cost-figure" id="cost-total">$0</div>
+      <div class="cost-detail">
+        <span>Total Departures (12mo)</span>
+        <span class="value" id="cost-departures">0</span>
+      </div>
+      <div class="cost-detail">
+        <span>Replacement Cost / Guard</span>
+        <span class="value" id="cost-per-guard">$3,500</span>
+      </div>
+      <div class="cost-detail">
+        <span>Implied Monthly Burn</span>
+        <span class="value" id="cost-monthly">$0</span>
+      </div>
+      <div class="benchmark-context" style="margin-top: 14px;">
+        Replacement cost includes recruiting, BSIS guard card processing, training (Power-to-Arrest, on-site), uniforms, lost productivity, and overtime to backfill. Industry estimates range <strong>$2,500–$5,000</strong> per non-exempt security guard.
+        <span class="source-tag">SOURCE · WORK INSTITUTE · SHRM HUMAN CAPITAL BENCHMARKING</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- METHODOLOGY -->
+  <details class="methodology">
+    <summary>Methodology &amp; Honest Caveats</summary>
+    <div class="methodology-body">
+      <p><strong style="color: var(--text);">Headline formula (your spec):</strong> <code>Retention = (HC − Departures) / HC × 100</code> using start-of-period headcount. This is the SHRM standard "retention rate."</p>
+      <p><strong style="color: var(--text);">Annualized turnover</strong> = sum of departures over trailing 12 months ÷ average headcount across those months. This is the BLS / ASIS comparable metric.</p>
+      <p><strong style="color: var(--text);">12-month rolling retention</strong> = product of monthly retention rates over the period (compounded), which more accurately reflects sustained workforce stability than averaging.</p>
+      <p style="color: var(--amber);">⚠ <strong style="color: var(--text);">Limitations of this formula:</strong> It treats voluntary resignations and involuntary terminations identically. For staffing decisions, distinguishing the two matters — losing a guard you fired is operationally different from losing a top performer to a competitor. Consider tracking departure reason as a future enhancement.</p>
+      <p style="color: var(--amber);">⚠ <strong style="color: var(--text);">"HC" interpretation:</strong> Industry convention is start-of-period headcount (used here). Some firms use average HC, which produces slightly different numbers. Be consistent month-over-month either way.</p>
+    </div>
+  </details>
+
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let monthlyData = [];
+let siteData = [];
+let replacementCost = 3500;
+let saveTimer = null;
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  await loadData();
+  bindEvents();
+  render();
+}
+
+async function loadData() {
+  // Monthly
+  try {
+    const r = await window.storage.get('manzanita:monthly');
+    if (r && r.value) monthlyData = JSON.parse(r.value);
+  } catch (e) { /* not found */ }
+
+  if (!monthlyData || monthlyData.length === 0) {
+    seedDefaultMonths();
+  }
+
+  // Sites
+  try {
+    const r = await window.storage.get('manzanita:sites');
+    if (r && r.value) siteData = JSON.parse(r.value);
+  } catch (e) { /* not found */ }
+
+  if (!siteData || siteData.length === 0) {
+    siteData = [
+      { id: 's1', name: 'Site Alpha', startingHC: '', departures: '' },
+      { id: 's2', name: 'Site Bravo', startingHC: '', departures: '' },
+      { id: 's3', name: 'Site Charlie', startingHC: '', departures: '' }
+    ];
+  }
+
+  // Settings
+  try {
+    const r = await window.storage.get('manzanita:settings');
+    if (r && r.value) {
+      const s = JSON.parse(r.value);
+      replacementCost = s.replacementCost || 3500;
+      document.getElementById('replacement-cost').value = replacementCost;
+    }
+  } catch (e) { /* not found */ }
+}
+
+function seedDefaultMonths() {
+  const now = new Date();
+  monthlyData = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    monthlyData.push({
+      year: d.getFullYear(),
+      month: d.getMonth(),
+      startingHC: '',
+      newHires: '',
+      departures: ''
+    });
+  }
+}
+
+// ============================================================
+// SAVE (debounced)
+// ============================================================
+async function save() {
+  const status = document.getElementById('save-status');
+  status.textContent = 'Saving…';
+  status.classList.remove('saved');
+
+  try {
+    await window.storage.set('manzanita:monthly', JSON.stringify(monthlyData));
+    await window.storage.set('manzanita:sites', JSON.stringify(siteData));
+    await window.storage.set('manzanita:settings', JSON.stringify({ replacementCost }));
+    status.textContent = '✓ Saved';
+    status.classList.add('saved');
+    setTimeout(() => {
+      status.textContent = 'Auto-save enabled';
+      status.classList.remove('saved');
+    }, 1500);
+  } catch (e) {
+    status.textContent = '⚠ Save failed';
+    console.error(e);
+  }
+}
+
+function debouncedSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 500);
+}
+
+// ============================================================
+// CALCULATIONS
+// ============================================================
+function num(v) {
+  const n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+
+function hasData(row) {
+  return row.startingHC !== '' && row.startingHC !== null && !isNaN(parseFloat(row.startingHC));
+}
+
+function retentionPct(row) {
+  const hc = num(row.startingHC);
+  const dep = num(row.departures);
+  if (hc <= 0) return null;
+  return ((hc - dep) / hc) * 100;
+}
+
+function endingHC(row) {
+  return num(row.startingHC) + num(row.newHires) - num(row.departures);
+}
+
+function netChange(row) {
+  return num(row.newHires) - num(row.departures);
+}
+
+function calcRolling12() {
+  const filled = monthlyData.filter(hasData);
+  if (filled.length === 0) return null;
+
+  // Compounded retention
+  let product = 1;
+  let count = 0;
+  filled.forEach(r => {
+    const ret = retentionPct(r);
+    if (ret !== null) {
+      product *= (ret / 100);
+      count++;
+    }
+  });
+
+  return count > 0 ? product * 100 : null;
+}
+
+function calcAnnualizedTurnover() {
+  const filled = monthlyData.filter(hasData);
+  if (filled.length === 0) return null;
+
+  const totalDep = filled.reduce((s, r) => s + num(r.departures), 0);
+  const avgHC = filled.reduce((s, r) => s + num(r.startingHC), 0) / filled.length;
+
+  if (avgHC <= 0) return null;
+
+  // Annualize based on actual months of data
+  const monthsOfData = filled.length;
+  const annualizedDep = (totalDep / monthsOfData) * 12;
+
+  return (annualizedDep / avgHC) * 100;
+}
+
+function calcCurrentRetention() {
+  // Most recent month with data
+  for (let i = monthlyData.length - 1; i >= 0; i--) {
+    if (hasData(monthlyData[i])) {
+      return { rate: retentionPct(monthlyData[i]), row: monthlyData[i] };
+    }
+  }
+  return null;
+}
+
+function calcActiveHeadcount() {
+  // Most recent ending HC
+  for (let i = monthlyData.length - 1; i >= 0; i--) {
+    if (hasData(monthlyData[i])) {
+      const filled = monthlyData.filter(hasData);
+      const first = filled[0];
+      const last = filled[filled.length - 1];
+      return {
+        current: endingHC(monthlyData[i]),
+        netChange: endingHC(last) - num(first.startingHC)
+      };
+    }
+  }
+  return null;
+}
+
+function calc12moDepartures() {
+  return monthlyData.filter(hasData).reduce((s, r) => s + num(r.departures), 0);
+}
+
+// ============================================================
+// RENDER: KPIs
+// ============================================================
+function renderKPIs() {
+  const cur = calcCurrentRetention();
+  const rolling = calcRolling12();
+  const turnover = calcAnnualizedTurnover();
+  const active = calcActiveHeadcount();
+
+  // Current
+  if (cur && cur.rate !== null) {
+    document.getElementById('kpi-current').innerHTML =
+      `${cur.rate.toFixed(1)} <span class="unit">%</span>`;
+    const monthLabel = `${MONTH_NAMES[cur.row.month]} ${cur.row.year}`;
+    document.getElementById('kpi-current-detail').textContent =
+      `${monthLabel} · ${num(cur.row.departures)} departures`;
+  }
+
+  // Rolling
+  if (rolling !== null) {
+    document.getElementById('kpi-rolling').innerHTML =
+      `${rolling.toFixed(1)} <span class="unit">%</span>`;
+    const filled = monthlyData.filter(hasData);
+    document.getElementById('kpi-rolling-detail').textContent =
+      `Compounded · ${filled.length} month${filled.length !== 1 ? 's' : ''} of data`;
+  }
+
+  // Turnover
+  if (turnover !== null) {
+    document.getElementById('kpi-turnover').innerHTML =
+      `${turnover.toFixed(0)} <span class="unit">%</span>`;
+    const benchmark = 121;
+    const delta = turnover - benchmark;
+    const indicator = delta < 0
+      ? `<span class="delta up">↓ ${Math.abs(delta).toFixed(0)}pt vs industry</span>`
+      : `<span class="delta down">↑ ${delta.toFixed(0)}pt vs industry</span>`;
+    document.getElementById('kpi-turnover-detail').innerHTML = indicator;
+  }
+
+  // Headcount
+  if (active) {
+    document.getElementById('kpi-headcount').textContent = active.current;
+    const sign = active.netChange >= 0 ? '+' : '';
+    const cls = active.netChange > 0 ? 'up' : (active.netChange < 0 ? 'down' : 'flat');
+    document.getElementById('kpi-headcount-detail').innerHTML =
+      `<span class="delta ${cls}">${sign}${active.netChange} net (12mo)</span>`;
+  }
+
+  // Update last-updated
+  document.getElementById('last-updated').textContent =
+    'UPDATED ' + new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).toUpperCase();
+}
+
+// ============================================================
+// RENDER: TREND CHART (custom SVG)
+// ============================================================
+function renderTrend() {
+  const svg = document.getElementById('trend-chart');
+  svg.innerHTML = '';
+
+  const W = 800, H = 280;
+  const padL = 50, padR = 20, padT = 20, padB = 40;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+
+  // Y-axis: retention 70-100% scale
+  const yMin = 70, yMax = 100;
+  const yScale = v => padT + innerH - ((v - yMin) / (yMax - yMin)) * innerH;
+
+  // Gridlines
+  [70, 80, 90, 100].forEach(v => {
+    const y = yScale(v);
+    svg.innerHTML += `
+      <line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}"
+            stroke="#23272F" stroke-width="1" stroke-dasharray="2,4" />
+      <text x="${padL - 8}" y="${y + 4}" text-anchor="end"
+            fill="#545A65" font-family="JetBrains Mono" font-size="10">${v}%</text>
+    `;
+  });
+
+  // Industry baseline
+  const industryY = yScale(88);
+  svg.innerHTML += `
+    <line x1="${padL}" y1="${industryY}" x2="${W - padR}" y2="${industryY}"
+          stroke="#545A65" stroke-width="1" stroke-dasharray="4,4" opacity="0.6" />
+  `;
+
+  // X-axis labels + data points
+  const dataLen = monthlyData.length;
+  if (dataLen === 0) return;
+
+  const xStep = innerW / Math.max(dataLen - 1, 1);
+
+  // Build path for retention line
+  const points = [];
+  monthlyData.forEach((row, i) => {
+    const x = padL + i * xStep;
+    if (hasData(row)) {
+      const ret = retentionPct(row);
+      if (ret !== null) {
+        const y = yScale(Math.min(Math.max(ret, yMin), yMax));
+        points.push({ x, y, ret, row, i });
+      }
+    }
+  });
+
+  // Area fill under line
+  if (points.length > 1) {
+    let areaPath = `M ${points[0].x} ${yScale(yMin)}`;
+    points.forEach(p => { areaPath += ` L ${p.x} ${p.y}`; });
+    areaPath += ` L ${points[points.length-1].x} ${yScale(yMin)} Z`;
+
+    svg.innerHTML += `
+      <defs>
+        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#EA580C" stop-opacity="0.3" />
+          <stop offset="100%" stop-color="#EA580C" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      <path d="${areaPath}" fill="url(#areaGrad)" />
+    `;
+  }
+
+  // Line
+  if (points.length > 0) {
+    let linePath = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      linePath += ` L ${points[i].x} ${points[i].y}`;
+    }
+    svg.innerHTML += `
+      <path d="${linePath}" fill="none" stroke="#EA580C" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" />
+    `;
+
+    // Points
+    points.forEach(p => {
+      svg.innerHTML += `
+        <circle cx="${p.x}" cy="${p.y}" r="4" fill="#0A0B0D" stroke="#EA580C" stroke-width="2" />
+      `;
+    });
+  }
+
+  // Departure dots (bottom of chart)
+  monthlyData.forEach((row, i) => {
+    const x = padL + i * xStep;
+    if (hasData(row)) {
+      const dep = num(row.departures);
+      if (dep > 0) {
+        const r = Math.min(2 + dep, 8);
+        svg.innerHTML += `
+          <circle cx="${x}" cy="${H - padB + 12}" r="${r}" fill="#10B981" opacity="0.6" />
+        `;
+      }
+    }
+  });
+
+  // X-axis labels
+  monthlyData.forEach((row, i) => {
+    if (i % 2 === 0 || i === dataLen - 1) {
+      const x = padL + i * xStep;
+      svg.innerHTML += `
+        <text x="${x}" y="${H - padB + 30}" text-anchor="middle"
+              fill="#545A65" font-family="JetBrains Mono" font-size="10">
+          ${MONTH_NAMES[row.month].toUpperCase()}
+        </text>
+      `;
+    }
+  });
+
+  // Empty state
+  if (points.length === 0) {
+    svg.innerHTML += `
+      <text x="${W/2}" y="${H/2}" text-anchor="middle"
+            fill="#545A65" font-family="Manrope" font-size="13">
+        Enter monthly data below to see your trend
+      </text>
+    `;
+  }
+}
+
+// ============================================================
+// RENDER: SITE LIST (read-only display)
+// ============================================================
+function renderSites() {
+  const list = document.getElementById('site-list');
+  list.innerHTML = '';
+
+  const validSites = siteData.filter(s => num(s.startingHC) > 0);
+
+  if (validSites.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        No site data yet.<br>
+        <button class="btn" style="margin-top: 12px;" onclick="document.querySelector('[data-tab=sites]').click()">
+          Add Sites →
+        </button>
+      </div>`;
+    return;
+  }
+
+  // Sort by retention rate descending
+  validSites
+    .map(s => ({
+      ...s,
+      retention: ((num(s.startingHC) - num(s.departures)) / num(s.startingHC)) * 100
+    }))
+    .sort((a, b) => b.retention - a.retention)
+    .forEach(s => {
+      const ret = s.retention;
+      let color = 'var(--green)';
+      if (ret < 85) color = 'var(--red)';
+      else if (ret < 92) color = 'var(--amber)';
+
+      const fillPct = Math.min(ret, 100);
+
+      list.innerHTML += `
+        <div class="site-row">
+          <div class="site-row-top">
+            <span class="site-name">${escapeHtml(s.name)}</span>
+            <span class="site-rate" style="color: ${color}">${ret.toFixed(1)}%</span>
+          </div>
+          <div class="site-bar">
+            <div class="site-bar-fill" style="width: ${fillPct}%; background: ${color}"></div>
+          </div>
+          <div class="site-meta">
+            <span>${num(s.startingHC)} starting HC</span>
+            <span>${num(s.departures)} departures</span>
+          </div>
+        </div>`;
+    });
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[c]);
+}
+
+// ============================================================
+// RENDER: MONTHLY TABLE
+// ============================================================
+function renderMonthlyTable() {
+  const tbody = document.querySelector('#monthly-table tbody');
+  tbody.innerHTML = '';
+
+  const now = new Date();
+  const curY = now.getFullYear(), curM = now.getMonth();
+
+  monthlyData.forEach((row, idx) => {
+    const isCurrent = row.year === curY && row.month === curM;
+    const ret = retentionPct(row);
+    const eHC = endingHC(row);
+    const net = netChange(row);
+    const hasIt = hasData(row);
+
+    let retDisplay = '—';
+    let retColor = 'var(--text-faint)';
+    if (ret !== null) {
+      retDisplay = ret.toFixed(1) + '%';
+      if (ret >= 95) retColor = 'var(--green)';
+      else if (ret >= 88) retColor = 'var(--text)';
+      else if (ret >= 80) retColor = 'var(--amber)';
+      else retColor = 'var(--red)';
+    }
+
+    let netDisplay = hasIt ? (net >= 0 ? '+' : '') + net : '—';
+    let netColor = 'var(--text-muted)';
+    if (hasIt) {
+      if (net > 0) netColor = 'var(--green)';
+      else if (net < 0) netColor = 'var(--red)';
+    }
+
+    tbody.innerHTML += `
+      <tr>
+        <td>
+          <span class="month-cell ${isCurrent ? 'current' : ''}">
+            ${MONTH_NAMES[row.month]}<span class="year">${row.year}</span>
+            ${isCurrent ? ' ◀' : ''}
+          </span>
+        </td>
+        <td class="num"><input type="number" data-idx="${idx}" data-field="startingHC" value="${row.startingHC}" placeholder="0" min="0"></td>
+        <td class="num"><input type="number" data-idx="${idx}" data-field="newHires" value="${row.newHires}" placeholder="0" min="0"></td>
+        <td class="num"><input type="number" data-idx="${idx}" data-field="departures" value="${row.departures}" placeholder="0" min="0"></td>
+        <td class="num calc">${hasIt ? eHC : '—'}</td>
+        <td class="num rate-cell" style="color: ${retColor}">${retDisplay}</td>
+        <td class="num" style="color: ${netColor}">${netDisplay}</td>
+      </tr>`;
+  });
+
+  // Bind input events
+  tbody.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', (e) => {
+      const idx = parseInt(e.target.dataset.idx);
+      const field = e.target.dataset.field;
+      monthlyData[idx][field] = e.target.value;
+      debouncedSave();
+      // Re-render dependent UI without rebuilding the table (preserve focus)
+      renderKPIs();
+      renderTrend();
+      renderBenchmark();
+      renderCost();
+      // Update only the calc cells in this row
+      updateRowCalcCells(idx);
+    });
+  });
+}
+
+function updateRowCalcCells(idx) {
+  const row = monthlyData[idx];
+  const tbody = document.querySelector('#monthly-table tbody');
+  const tr = tbody.children[idx];
+  if (!tr) return;
+
+  const ret = retentionPct(row);
+  const eHC = endingHC(row);
+  const net = netChange(row);
+  const hasIt = hasData(row);
+
+  tr.children[4].textContent = hasIt ? eHC : '—';
+
+  let retDisplay = '—', retColor = 'var(--text-faint)';
+  if (ret !== null) {
+    retDisplay = ret.toFixed(1) + '%';
+    if (ret >= 95) retColor = 'var(--green)';
+    else if (ret >= 88) retColor = 'var(--text)';
+    else if (ret >= 80) retColor = 'var(--amber)';
+    else retColor = 'var(--red)';
+  }
+  tr.children[5].textContent = retDisplay;
+  tr.children[5].style.color = retColor;
+
+  let netDisplay = hasIt ? (net >= 0 ? '+' : '') + net : '—';
+  let netColor = 'var(--text-muted)';
+  if (hasIt) {
+    if (net > 0) netColor = 'var(--green)';
+    else if (net < 0) netColor = 'var(--red)';
+  }
+  tr.children[6].textContent = netDisplay;
+  tr.children[6].style.color = netColor;
+}
+
+// ============================================================
+// RENDER: SITE EDITOR
+// ============================================================
+function renderSiteEditor() {
+  const list = document.getElementById('site-editor-list');
+  list.innerHTML = '';
+
+  siteData.forEach((s, idx) => {
+    const ret = num(s.startingHC) > 0
+      ? (((num(s.startingHC) - num(s.departures)) / num(s.startingHC)) * 100).toFixed(1) + '%'
+      : '—';
+
+    const div = document.createElement('div');
+    div.className = 'site-editor';
+    div.innerHTML = `
+      <input type="text" data-idx="${idx}" data-field="name" value="${escapeHtml(s.name)}" placeholder="Site name">
+      <input type="number" data-idx="${idx}" data-field="startingHC" value="${s.startingHC}" placeholder="0" min="0">
+      <input type="number" data-idx="${idx}" data-field="departures" value="${s.departures}" placeholder="0" min="0">
+      <div style="text-align: right; font-family: var(--mono); font-size: 13px; color: var(--text);">${ret}</div>
+      <button class="btn-icon" data-idx="${idx}" title="Remove">×</button>`;
+    list.appendChild(div);
+  });
+
+  // Bind events
+  list.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', (e) => {
+      const idx = parseInt(e.target.dataset.idx);
+      const field = e.target.dataset.field;
+      siteData[idx][field] = e.target.value;
+      debouncedSave();
+      renderSites();
+      // Update inline retention display
+      const ret = num(siteData[idx].startingHC) > 0
+        ? (((num(siteData[idx].startingHC) - num(siteData[idx].departures)) / num(siteData[idx].startingHC)) * 100).toFixed(1) + '%'
+        : '—';
+      e.target.parentElement.children[3].textContent = ret;
+    });
+  });
+
+  list.querySelectorAll('.btn-icon').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(e.target.dataset.idx);
+      siteData.splice(idx, 1);
+      debouncedSave();
+      renderSiteEditor();
+      renderSites();
+    });
+  });
+}
+
+// ============================================================
+// RENDER: BENCHMARK
+// ============================================================
+function renderBenchmark() {
+  const rolling = calcRolling12();
+  if (rolling === null) {
+    document.getElementById('you-marker').style.left = '50%';
+    return;
+  }
+  // Map 50-100% to 0-100% on bar
+  const clamped = Math.min(Math.max(rolling, 50), 100);
+  const pct = ((clamped - 50) / 50) * 100;
+  document.getElementById('you-marker').style.left = pct + '%';
+  document.getElementById('you-marker').setAttribute('data-label', `MANZANITA ${rolling.toFixed(0)}%`);
+}
+
+// ============================================================
+// RENDER: COST
+// ============================================================
+function renderCost() {
+  const dep = calc12moDepartures();
+  const total = dep * replacementCost;
+  const monthly = total / 12;
+
+  document.getElementById('cost-total').textContent =
+    '$' + total.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  document.getElementById('cost-departures').textContent = dep;
+  document.getElementById('cost-per-guard').textContent =
+    '$' + replacementCost.toLocaleString('en-US');
+  document.getElementById('cost-monthly').textContent =
+    '$' + monthly.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+// ============================================================
+// MASTER RENDER
+// ============================================================
+function render() {
+  renderKPIs();
+  renderTrend();
+  renderSites();
+  renderMonthlyTable();
+  renderSiteEditor();
+  renderBenchmark();
+  renderCost();
+}
+
+// ============================================================
+// EVENTS
+// ============================================================
+function bindEvents() {
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      const tab = t.dataset.tab;
+      document.getElementById('monthly-panel').style.display = tab === 'monthly' ? 'block' : 'none';
+      document.getElementById('sites-panel').style.display = tab === 'sites' ? 'block' : 'none';
+    });
+  });
+
+  // Add month
+  document.getElementById('btn-add-month').addEventListener('click', () => {
+    const last = monthlyData[monthlyData.length - 1];
+    let y = last ? last.year : new Date().getFullYear();
+    let m = last ? last.month + 1 : new Date().getMonth();
+    if (m > 11) { m = 0; y++; }
+    monthlyData.push({ year: y, month: m, startingHC: '', newHires: '', departures: '' });
+    debouncedSave();
+    renderMonthlyTable();
+    renderTrend();
+  });
+
+  // Reset
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    if (!confirm('This will clear all monthly retention data. Site data will be kept. Continue?')) return;
+    seedDefaultMonths();
+    debouncedSave();
+    render();
+  });
+
+  // Add site
+  document.getElementById('btn-add-site').addEventListener('click', () => {
+    siteData.push({
+      id: 's' + Date.now(),
+      name: 'New Site',
+      startingHC: '',
+      departures: ''
+    });
+    debouncedSave();
+    renderSiteEditor();
+    renderSites();
+  });
+
+  // Replacement cost
+  document.getElementById('replacement-cost').addEventListener('input', (e) => {
+    replacementCost = num(e.target.value) || 3500;
+    debouncedSave();
+    renderCost();
+  });
+}
+
+// ============================================================
+// GO
+// ============================================================
+init().catch(err => {
+  console.error('Init failed:', err);
+  document.body.innerHTML = '<div style="padding:40px;color:#EF4444;font-family:monospace">Failed to load. Check console.</div>';
+});
+</script>
+</body>
+</html>
