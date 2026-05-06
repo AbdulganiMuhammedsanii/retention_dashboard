@@ -89,7 +89,3 @@ values ('00000000-0000-0000-0000-000000000001', 2024, 0, 48, 2, 3);
 3. In Supabase Auth → URL configuration, add redirect URL: `{NEXT_PUBLIC_SITE_URL}/api/auth/callback`.
 
 Default Phase 1 deploy can stay on the Railway-generated URL; swap DNS later if needed.
-
-## Lighthouse
-
-Target ≥ 95 on `/dashboard` after real data and fonts are loaded; optimize images and keep dashboard RSC payload lean if scores lag.
