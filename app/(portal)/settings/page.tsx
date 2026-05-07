@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChangePasswordForm } from "./change-password-form";
 
 export default async function SettingsPage() {
   const ctx = await getPortalContext();
@@ -100,6 +101,15 @@ export default async function SettingsPage() {
             </code>
             , then redeploy.
           </p>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6 border-[var(--border)] bg-[var(--panel)] text-[var(--text)]">
+        <CardHeader>
+          <CardTitle className="text-lg">Password</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChangePasswordForm />
         </CardContent>
       </Card>
 
