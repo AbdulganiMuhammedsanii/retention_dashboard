@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getServerEnv } from "@/lib/env";
-import { lookupAllowlist, parseAllowlistJson } from "@/lib/allowlist";
+import { loadAllowlist, lookupAllowlist } from "@/lib/allowlist";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createRouteHandlerSupabaseClient } from "@/lib/supabase/route-handler";
 
@@ -102,9 +102,9 @@ export async function GET(request: NextRequest) {
     return supabaseResponse;
   }
 
-  let allowlist: ReturnType<typeof parseAllowlistJson>;
+  let allowlist: ReturnType<typeof loadAllowlist>;
   try {
-    allowlist = parseAllowlistJson(getServerEnv().ALLOWLIST_JSON);
+    allowlist = loadAllowlist(getServerEnv());
   } catch {
     const denied = NextResponse.redirect(new URL("/login?error=config", origin));
     const sb = createRouteHandlerSupabaseClient(request, denied);

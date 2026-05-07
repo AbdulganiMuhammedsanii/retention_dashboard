@@ -90,11 +90,15 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-[var(--text-muted)]">
-            In-app invites are coming soon (Phase 2). For now, add emails to{" "}
+            In-app invites are coming soon (Phase 2). For now, set{" "}
             <code className="rounded bg-[var(--panel-elevated)] px-1 text-xs">
-              ALLOWLIST_JSON
+              ALLOWLIST_EMAILS
             </code>{" "}
-            and redeploy.
+            (comma-separated) and{" "}
+            <code className="rounded bg-[var(--panel-elevated)] px-1 text-xs">
+              ALLOWLIST_ORG_ID
+            </code>
+            , then redeploy.
           </p>
         </CardContent>
       </Card>

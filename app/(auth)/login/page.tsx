@@ -6,7 +6,7 @@ const urlErrors: Record<string, string> = {
   bootstrap:
     "Could not create your workspace profile. An administrator should check server logs and confirm the invitation’s organization exists in the database.",
   missing_org:
-    "Your invitation references an organization that is not in the database yet. Run the seed SQL (or create that org), or fix the org id in ALLOWLIST_JSON.",
+    "Your invitation references an organization that is not in the database yet. Run the seed SQL (or create that org), or fix ALLOWLIST_ORG_ID to match Postgres.",
   config: "Server allowlist is misconfigured. Contact your administrator.",
 };
 

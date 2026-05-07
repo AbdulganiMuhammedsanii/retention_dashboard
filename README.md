@@ -20,27 +20,22 @@ Next.js 15 + Supabase (Postgres, Auth, RLS) portal for Manzanita Security workfo
 
 Copy `.env.example` to `.env.local` and fill in values.
 
-| Variable                        | Description                                                                              |
-| ------------------------------- | ---------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL                                                                     |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon (public) key                                                               |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Service role key — **server only**, used for first-login profile bootstrap               |
-| `ALLOWLIST_JSON`                | Map of lowercase email → `{ "orgId": "<uuid>", "role": "owner" \| "admin" \| "viewer" }` |
-| `NEXT_PUBLIC_SITE_URL`          | Base URL for magic-link redirect (e.g. `https://your-app.up.railway.app`)                |
+| Variable                        | Description                                                                               |
+| ------------------------------- | ----------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL                                                                      |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon (public) key                                                                |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Service role key — **server only**, used for first-login profile bootstrap                |
+| `ALLOWLIST_EMAILS`              | Comma-, semicolon-, or newline-separated emails that may sign in                          |
+| `ALLOWLIST_ORG_ID`              | UUID of `public.organizations` row for every allowlisted user (see seed)                  |
+| `ALLOWLIST_ROLE`                | Optional. `owner` \| `admin` \| `viewer` for **all** allowlisted emails (default `owner`) |
+| `NEXT_PUBLIC_SITE_URL`          | Base URL for magic-link redirect (e.g. `https://your-app.up.railway.app`)                 |
 
-Example `ALLOWLIST_JSON` (single line for `.env`):
+Example (three people, same org, all owners):
 
-```json
-{
-  "abdulgani.muhammedsani@gmail.com": {
-    "orgId": "00000000-0000-0000-0000-000000000001",
-    "role": "owner"
-  },
-  "ceggers@manzanita.io": {
-    "orgId": "00000000-0000-0000-0000-000000000001",
-    "role": "owner"
-  }
-}
+```bash
+ALLOWLIST_EMAILS=you@company.com,colleague@company.com,boss@company.com
+ALLOWLIST_ORG_ID=00000000-0000-0000-0000-000000000001
+ALLOWLIST_ROLE=owner
 ```
 
 ## Database
@@ -50,7 +45,7 @@ Example `ALLOWLIST_JSON` (single line for `.env`):
 
 ## How to invite a teammate (Phase 1)
 
-1. Add their email (lowercase key) to `ALLOWLIST_JSON` with the correct `orgId` and `role`.
+1. Add their work email to `ALLOWLIST_EMAILS` (comma-separated list). Everyone uses the same `ALLOWLIST_ORG_ID` and `ALLOWLIST_ROLE` in Phase 1.
 2. Redeploy or update the env var on Railway and restart the service.
 3. They request a magic link on `/login`.
 
