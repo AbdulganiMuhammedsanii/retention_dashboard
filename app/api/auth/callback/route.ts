@@ -13,8 +13,39 @@ const EMAIL_OTP_TYPES = new Set([
   "email",
 ]);
 
+/**
+ * Resolve the public origin we should use for browser-facing redirects.
+ *
+ * Behind a proxy (Railway, Vercel, Fly, etc.) `request.url` can resolve to the
+ * container's internal `localhost:<PORT>`, which would send the user there.
+ * Prefer an explicit env (`NEXT_PUBLIC_SITE_URL`), then standard forwarded
+ * headers, then the request URL as a last resort.
+ */
+function resolvePublicOrigin(request: NextRequest): string {
+  const env = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  if (env && /^https?:\/\//i.test(env)) {
+    return env;
+  }
+
+  const xfHost = request.headers.get("x-forwarded-host");
+  const xfProto = request.headers.get("x-forwarded-proto");
+  if (xfHost) {
+    const proto = xfProto ?? (xfHost.startsWith("localhost") ? "http" : "https");
+    return `${proto}://${xfHost}`;
+  }
+
+  const hostHeader = request.headers.get("host");
+  if (hostHeader && !hostHeader.startsWith("localhost:")) {
+    const proto = xfProto ?? "https";
+    return `${proto}://${hostHeader}`;
+  }
+
+  return new URL(request.url).origin;
+}
+
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = resolvePublicOrigin(request);
   const code = searchParams.get("code");
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type");
