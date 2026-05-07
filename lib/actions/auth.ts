@@ -9,7 +9,7 @@ import { getServerEnv } from "@/lib/env";
 
 const credsSchema = z.object({
   email: z.string().email("Enter a valid email address."),
-  password: z.string().min(8, "Password must be at least 8 characters."),
+  password: z.string().min(1, "Enter your password."),
 });
 
 export type AuthActionResult =
@@ -30,20 +30,6 @@ const changePasswordSchema = z
     message: "New password must differ from the current one.",
     path: ["newPassword"],
   });
-
-function readCreds(
-  formData: FormData
-): { ok: true; email: string; password: string } | { ok: false; error: string } {
-  const parsed = credsSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-  });
-  if (!parsed.success) {
-    const issue = parsed.error.issues[0];
-    return { ok: false, error: issue?.message ?? "Invalid input" };
-  }
-  return { ok: true, email: parsed.data.email, password: parsed.data.password };
-}
 
 function checkAllowlist(
   email: string
@@ -95,106 +81,37 @@ export async function signInAction(
   _prev: AuthActionResult | null,
   formData: FormData
 ): Promise<AuthActionResult> {
-  const creds = readCreds(formData);
-  if (!creds.ok) return creds;
+  const parsed = credsSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return { ok: false, error: issue?.message ?? "Invalid input" };
+  }
 
-  const allow = checkAllowlist(creds.email);
+  const allow = checkAllowlist(parsed.data.email);
   if (!allow.ok) return allow;
 
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: creds.email,
-    password: creds.password,
+    email: parsed.data.email,
+    password: parsed.data.password,
   });
   if (error) {
     return { ok: false, error: "Wrong email or password." };
   }
 
-  await ensureProfile(data.user.id, creds.email, allow.orgId, allow.role);
+  await ensureProfile(data.user.id, parsed.data.email, allow.orgId, allow.role);
   redirect("/dashboard");
 }
 
-export async function signUpAction(
-  _prev: AuthActionResult | null,
-  formData: FormData
-): Promise<AuthActionResult> {
-  const creds = readCreds(formData);
-  if (!creds.ok) return creds;
-
-  const allow = checkAllowlist(creds.email);
-  if (!allow.ok) return allow;
-
-  const admin = createAdminSupabaseClient();
-  const { error: createError } = await admin.auth.admin.createUser({
-    email: creds.email,
-    password: creds.password,
-    email_confirm: true,
-  });
-
-  if (createError && !/already|registered|exist/i.test(createError.message)) {
-    return { ok: false, error: createError.message };
-  }
-
-  const supabase = await createServerSupabaseClient();
-  const { data: signIn, error: signInError } = await supabase.auth.signInWithPassword({
-    email: creds.email,
-    password: creds.password,
-  });
-  if (signInError) {
-    return {
-      ok: false,
-      error: "Account already exists with a different password. Use Sign in instead.",
-    };
-  }
-
-  await ensureProfile(signIn.user.id, creds.email, allow.orgId, allow.role);
-  redirect("/dashboard");
-}
-
-function resolveOrigin(): string {
-  const env = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
-  if (env && /^https?:\/\//i.test(env)) return env;
-  return "http://localhost:3000";
-}
-
-export async function forgotPasswordAction(
-  _prev: AuthActionResult | null,
-  formData: FormData
-): Promise<AuthActionResult> {
-  const parsed = z
-    .string()
-    .email("Enter a valid email address.")
-    .safeParse(formData.get("email"));
-  if (!parsed.success) {
-    return { ok: false, error: "Enter a valid email address." };
-  }
-  const email = parsed.data;
-
-  // Generic response either way — avoid leaking whether the email is registered/allowed.
-  const generic: AuthActionResult = {
-    ok: true,
-    message:
-      "If that email is on the invite list, we sent a reset link. Check your inbox (and spam).",
-  };
-
-  const allow = checkAllowlist(email);
-  if (!allow.ok) return generic;
-
-  const supabase = await createServerSupabaseClient();
-  const origin = resolveOrigin();
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/api/auth/callback?next=/reset-password`,
-  });
-  if (error) {
-    console.error("[auth] resetPasswordForEmail failed", {
-      email,
-      message: error.message,
-    });
-  }
-  return generic;
-}
-
-const resetPasswordSchema = z
+const emailSchema = z.string().email("Enter a valid email address.");
+const otpSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{6,8}$/u, "Enter the code from the email.");
+const newPasswordSchema = z
   .object({
     newPassword: z.string().min(8, "New password must be at least 8 characters."),
     confirmPassword: z.string().min(1, "Confirm your new password."),
@@ -204,17 +121,94 @@ const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
-export async function resetPasswordAction(
+/**
+ * Step 1 — send a 6-digit OTP to the email.
+ * Creates the auth user if it doesn't exist (email_confirm happens at OTP verify).
+ */
+export async function requestEmailCodeAction(
   _prev: AuthActionResult | null,
   formData: FormData
 ): Promise<AuthActionResult> {
-  const parsed = resetPasswordSchema.safeParse({
+  const parsed = emailSchema.safeParse(formData.get("email"));
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid email" };
+  }
+  const email = parsed.data;
+
+  const allow = checkAllowlist(email);
+  if (!allow.ok) return allow;
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: true },
+  });
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  return {
+    ok: true,
+    message: "We sent a code to your email. It expires in 1 hour.",
+  };
+}
+
+/**
+ * Step 2 — verify the 6-digit OTP. Establishes a Supabase session and
+ * upserts the portal profile so RLS works.
+ */
+export async function verifyEmailCodeAction(
+  _prev: AuthActionResult | null,
+  formData: FormData
+): Promise<AuthActionResult> {
+  const parsedEmail = emailSchema.safeParse(formData.get("email"));
+  const parsedToken = otpSchema.safeParse(formData.get("token"));
+  if (!parsedEmail.success) {
+    return { ok: false, error: "Start over: invalid email." };
+  }
+  if (!parsedToken.success) {
+    return {
+      ok: false,
+      error: parsedToken.error.issues[0]?.message ?? "Invalid code",
+    };
+  }
+  const email = parsedEmail.data;
+  const token = parsedToken.data;
+
+  const allow = checkAllowlist(email);
+  if (!allow.ok) return allow;
+
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "email",
+  });
+  if (error || !data.user) {
+    return { ok: false, error: "Code is invalid or expired. Send a new one." };
+  }
+
+  await ensureProfile(data.user.id, email, allow.orgId, allow.role);
+  return { ok: true, message: "Email verified." };
+}
+
+/**
+ * Step 3 — finalize: set (or replace) the password while signed in via OTP.
+ * Used both for first-time setup and for forgot-password reset.
+ */
+export async function setPasswordAndContinueAction(
+  _prev: AuthActionResult | null,
+  formData: FormData
+): Promise<AuthActionResult> {
+  const parsed = newPasswordSchema.safeParse({
     newPassword: formData.get("newPassword"),
     confirmPassword: formData.get("confirmPassword"),
   });
   if (!parsed.success) {
-    const issue = parsed.error.issues[0];
-    return { ok: false, error: issue?.message ?? "Invalid input" };
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid input",
+    };
   }
 
   const supabase = await createServerSupabaseClient();
@@ -222,7 +216,7 @@ export async function resetPasswordAction(
   if (!userData.user) {
     return {
       ok: false,
-      error: "Reset link expired or already used. Request a new one.",
+      error: "Session expired. Start over from the email step.",
     };
   }
 

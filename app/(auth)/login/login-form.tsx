@@ -1,27 +1,21 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
-import { signInAction, signUpAction, type AuthActionResult } from "@/lib/actions/auth";
+import { signInAction, type AuthActionResult } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Logo } from "@/components/layout/logo";
 
-type Mode = "signin" | "signup";
-
 export function LoginForm({ urlError }: { urlError?: string }) {
-  const [mode, setMode] = useState<Mode>("signin");
-  const action = mode === "signin" ? signInAction : signUpAction;
   const [state, formAction, pending] = useActionState<
     AuthActionResult | null,
     FormData
-  >(action, null);
+  >(signInAction, null);
 
   const error = state?.ok === false ? state.error : urlError;
-
-  const isSignIn = mode === "signin";
 
   return (
     <Card className="w-full max-w-md border-[var(--border)] bg-[var(--panel)] text-[var(--text)] shadow-xl">
@@ -29,14 +23,12 @@ export function LoginForm({ urlError }: { urlError?: string }) {
         <div className="flex flex-col items-center gap-4 text-center">
           <Logo />
           <p className="text-sm text-[var(--text-muted)]">
-            {isSignIn
-              ? "Sign in with your work email and password."
-              : "Create your account. Your email must be on the invite list."}
+            Sign in with your work email and password.
           </p>
         </div>
       </CardHeader>
       <CardContent>
-        <form key={mode} action={formAction} className="space-y-4">
+        <form action={formAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email" className="text-[var(--text-muted)]">
               Work email
@@ -53,32 +45,18 @@ export function LoginForm({ urlError }: { urlError?: string }) {
             />
           </div>
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password" className="text-[var(--text-muted)]">
-                Password
-              </Label>
-              {isSignIn ? (
-                <Link
-                  href="/forgot-password"
-                  className="text-xs text-[var(--text-muted)] underline-offset-4 hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              ) : null}
-            </div>
+            <Label htmlFor="password" className="text-[var(--text-muted)]">
+              Password
+            </Label>
             <Input
               id="password"
               name="password"
               type="password"
-              autoComplete={isSignIn ? "current-password" : "new-password"}
+              autoComplete="current-password"
               required
-              minLength={8}
               disabled={pending}
               className="border-[var(--border)] bg-[var(--panel-elevated)]"
             />
-            {!isSignIn ? (
-              <p className="text-xs text-[var(--text-faint)]">At least 8 characters.</p>
-            ) : null}
           </div>
           {error ? (
             <p className="text-sm text-[var(--red)]" role="alert">
@@ -86,28 +64,16 @@ export function LoginForm({ urlError }: { urlError?: string }) {
             </p>
           ) : null}
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending
-              ? isSignIn
-                ? "Signing in…"
-                : "Creating account…"
-              : isSignIn
-                ? "Sign in"
-                : "Create account"}
+            {pending ? "Signing in…" : "Sign in"}
           </Button>
         </form>
-        <div className="mt-4 text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setMode(isSignIn ? "signup" : "signin");
-            }}
-            className="text-xs text-[var(--text-muted)] underline-offset-4 hover:underline"
-            disabled={pending}
-          >
-            {isSignIn
-              ? "First time here? Create an account"
-              : "Already have an account? Sign in"}
-          </button>
+        <div className="mt-4 flex flex-col items-center gap-1 text-center text-xs text-[var(--text-muted)]">
+          <Link href="/account" className="underline-offset-4 hover:underline">
+            First time signing in? Get an email code
+          </Link>
+          <Link href="/account" className="underline-offset-4 hover:underline">
+            Forgot your password? Reset with email code
+          </Link>
         </div>
       </CardContent>
     </Card>

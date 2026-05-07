@@ -1,14 +1,6 @@
-import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { ResetPasswordForm } from "./reset-password-form";
+import { AccountForm } from "./account-form";
 
-export default async function ResetPasswordPage() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email) redirect("/login?error=auth");
-
+export default function AccountPage() {
   return (
     <div
       className="w-full max-w-lg rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-1 shadow-2xl backdrop-blur-sm"
@@ -21,7 +13,7 @@ export default async function ResetPasswordPage() {
             "radial-gradient(ellipse at 50% 0%, rgba(234, 88, 12, 0.12) 0%, transparent 55%)",
         }}
       >
-        <ResetPasswordForm email={user.email} />
+        <AccountForm />
       </div>
     </div>
   );

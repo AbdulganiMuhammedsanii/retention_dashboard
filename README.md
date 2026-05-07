@@ -81,6 +81,28 @@ values ('00000000-0000-0000-0000-000000000001', 2024, 0, 48, 2, 3);
 
 1. Create a Railway service from this repo; set build command `npm run build` and start command `npm start`.
 2. Add the same env vars as in `.env.example`.
-3. In Supabase Auth → URL configuration, add redirect URL: `{NEXT_PUBLIC_SITE_URL}/api/auth/callback`.
+3. Set **Site URL** in Supabase Auth → URL Configuration to your Railway URL.
 
 Default Phase 1 deploy can stay on the Railway-generated URL; swap DNS later if needed.
+
+## How users are created (Phase 1)
+
+There is no self-service signup or email-based password reset. An administrator
+creates each allowlisted user once:
+
+1. Open Supabase Dashboard → **Authentication → Users → Add user**.
+2. Enter the user's email (must match an entry in `ALLOWLIST_EMAILS`) and a
+   temporary password. Tick **Auto Confirm User**.
+3. Share the email + temporary password with that user out-of-band.
+4. The user signs in at `/login`, then changes their password from
+   **Settings → Password**.
+
+If a user forgets their password, an admin resets it the same way (Supabase
+Dashboard → Authentication → Users → click the row → "Update password"), or
+runs:
+
+```ts
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+const admin = createAdminSupabaseClient();
+await admin.auth.admin.updateUserById(userId, { password: "newPassword123" });
+```
